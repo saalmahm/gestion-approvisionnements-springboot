@@ -2,9 +2,10 @@ package com.example.gestion_approvisionnements.service;
 
 import com.example.gestion_approvisionnements.dto.FournisseurDTO;
 import com.example.gestion_approvisionnements.entity.Fournisseur;
+import com.example.gestion_approvisionnements.exception.BusinessException;
+import com.example.gestion_approvisionnements.exception.ResourceNotFoundException;
 import com.example.gestion_approvisionnements.mapper.FournisseurMapper;
 import com.example.gestion_approvisionnements.repository.FournisseurRepository;
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -28,7 +29,7 @@ public class FournisseurService {
     @Transactional(readOnly = true)
     public FournisseurDTO getFournisseurById(Long id) {
         Fournisseur fournisseur = fournisseurRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Fournisseur introuvable avec l'id " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Fournisseur introuvable avec l'id " + id));
         return fournisseurMapper.toDTO(fournisseur);
     }
 
@@ -42,7 +43,7 @@ public class FournisseurService {
 
     public FournisseurDTO updateFournisseur(Long id, FournisseurDTO fournisseurDTO) {
         Fournisseur existing = fournisseurRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Fournisseur introuvable avec l'id " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Fournisseur introuvable avec l'id " + id));
 
         validateIceAvailability(fournisseurDTO.getIce(), existing.getId());
 
@@ -53,7 +54,7 @@ public class FournisseurService {
 
     public void deleteFournisseur(Long id) {
         if (!fournisseurRepository.existsById(id)) {
-            throw new EntityNotFoundException("Fournisseur introuvable avec l'id " + id);
+            throw new ResourceNotFoundException("Fournisseur introuvable avec l'id " + id);
         }
         fournisseurRepository.deleteById(id);
     }
@@ -61,7 +62,7 @@ public class FournisseurService {
     @Transactional(readOnly = true)
     public FournisseurDTO getFournisseurByIce(String ice) {
         Fournisseur fournisseur = fournisseurRepository.findByIce(ice)
-                .orElseThrow(() -> new EntityNotFoundException("Fournisseur introuvable avec l'ICE " + ice));
+                .orElseThrow(() -> new ResourceNotFoundException("Fournisseur introuvable avec l'ICE " + ice));
         return fournisseurMapper.toDTO(fournisseur);
     }
 
@@ -74,10 +75,10 @@ public class FournisseurService {
             return;
         }
         if (currentId == null) {
-            throw new IllegalStateException("Un fournisseur existe déjà avec l'ICE " + ice);
+            throw new BusinessException("Un fournisseur existe déjà avec l'ICE " + ice);
         }
         fournisseurRepository.findByIce(ice)
                 .filter(f -> f.getId().equals(currentId))
-                .orElseThrow(() -> new IllegalStateException("Un fournisseur existe déjà avec l'ICE " + ice));
+                .orElseThrow(() -> new BusinessException("Un fournisseur existe déjà avec l'ICE " + ice));
     }
 }
