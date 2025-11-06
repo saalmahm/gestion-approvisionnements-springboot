@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="
+          http://www.liquibase.org/xml/ns/dbchangelog
+          http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="004-create-ligne-commande" author="youco">
+        <createTable tableName="ligne_commande">
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="commande_fournisseur_id" type="BIGINT">
+                <constraints nullable="false" foreignKeyName="fk_ligne_commande__commande"
+                             references="commande_fournisseur(id)"/>
+            </column>
+            <column name="produit_id" type="BIGINT">
+                <constraints nullable="false" foreignKeyName="fk_ligne_commande__produit"
+                             references="produit(id)"/>
+            </column>
+            <column name="quantite" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+            <column name="prix_unitaire" type="NUMERIC(10,2)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="sous_total" type="NUMERIC(12,2)"/>
+        </createTable>
+    </changeSet>
+
+</databaseChangeLog>
