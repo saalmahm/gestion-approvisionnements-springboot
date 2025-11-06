@@ -2,9 +2,10 @@ package com.example.gestion_approvisionnements.service;
 
 import com.example.gestion_approvisionnements.dto.ProduitDTO;
 import com.example.gestion_approvisionnements.entity.Produit;
+import com.example.gestion_approvisionnements.exception.BusinessException;
+import com.example.gestion_approvisionnements.exception.ResourceNotFoundException;
 import com.example.gestion_approvisionnements.mapper.ProduitMapper;
 import com.example.gestion_approvisionnements.repository.ProduitRepository;
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -31,7 +32,7 @@ public class ProduitService {
     @Transactional(readOnly = true)
     public ProduitDTO getProduitById(Long id) {
         Produit produit = produitRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Produit introuvable avec l'id " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Produit introuvable avec l'id " + id));
         return produitMapper.toDTO(produit);
     }
 
@@ -44,7 +45,7 @@ public class ProduitService {
 
     public ProduitDTO updateProduit(Long id, ProduitDTO produitDTO) {
         Produit existing = produitRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Produit introuvable avec l'id " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Produit introuvable avec l'id " + id));
 
         validateProduit(produitDTO);
 
@@ -55,7 +56,7 @@ public class ProduitService {
 
     public void deleteProduit(Long id) {
         if (!produitRepository.existsById(id)) {
-            throw new EntityNotFoundException("Produit introuvable avec l'id " + id);
+            throw new ResourceNotFoundException("Produit introuvable avec l'id " + id);
         }
         produitRepository.deleteById(id);
     }
@@ -72,11 +73,11 @@ public class ProduitService {
 
     public void ajusterStock(Long produitId, int variation) {
         Produit produit = produitRepository.findById(produitId)
-                .orElseThrow(() -> new EntityNotFoundException("Produit introuvable avec l'id " + produitId));
+                .orElseThrow(() -> new ResourceNotFoundException("Produit introuvable avec l'id " + produitId));
 
         int nouveauStock = produit.getStockActuel() + variation;
         if (nouveauStock < 0) {
-            throw new IllegalStateException("Le stock ne peut pas devenir négatif (variation: " + variation + ")");
+            throw new BusinessException("Le stock ne peut pas devenir négatif (variation: " + variation + ")");
         }
 
         produit.setStockActuel(nouveauStock);
@@ -85,10 +86,10 @@ public class ProduitService {
 
     public void mettreAJourCoutMoyen(Long produitId, BigDecimal nouveauCump) {
         if (nouveauCump == null || nouveauCump.compareTo(BigDecimal.ZERO) < 0) {
-            throw new IllegalArgumentException("Le coût moyen pondéré doit être positif");
+            throw new BusinessException("Le coût moyen pondéré doit être positif");
         }
         Produit produit = produitRepository.findById(produitId)
-                .orElseThrow(() -> new EntityNotFoundException("Produit introuvable avec l'id " + produitId));
+                .orElseThrow(() -> new ResourceNotFoundException("Produit introuvable avec l'id " + produitId));
 
         produit.setCoutMoyenPondere(nouveauCump);
         produitRepository.save(produit);
@@ -96,13 +97,13 @@ public class ProduitService {
 
     private void validateProduit(ProduitDTO produitDTO) {
         if (produitDTO.getPrixUnitaire() != null && produitDTO.getPrixUnitaire().compareTo(BigDecimal.ZERO) < 0) {
-            throw new IllegalArgumentException("Le prix unitaire doit être positif");
+            throw new BusinessException("Le prix unitaire doit être positif");
         }
         if (produitDTO.getStockActuel() != null && produitDTO.getStockActuel() < 0) {
-            throw new IllegalArgumentException("Le stock actuel ne peut pas être négatif");
+            throw new BusinessException("Le stock actuel ne peut pas être négatif");
         }
         if (produitDTO.getCoutMoyenPondere() != null && produitDTO.getCoutMoyenPondere().compareTo(BigDecimal.ZERO) < 0) {
-            throw new IllegalArgumentException("Le coût moyen pondéré doit être positif");
+            throw new BusinessException("Le coût moyen pondéré doit être positif");
         }
     }
 }
