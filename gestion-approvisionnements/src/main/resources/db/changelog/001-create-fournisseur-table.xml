@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="
+          http://www.liquibase.org/xml/ns/dbchangelog
+          http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="001-create-fournisseur" author="youco">
+        <createTable tableName="fournisseur">
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="societe" type="VARCHAR(200)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="adresse" type="VARCHAR(255)"/>
+            <column name="contact" type="VARCHAR(100)"/>
+            <column name="email" type="VARCHAR(100)"/>
+            <column name="telephone" type="VARCHAR(100)"/>
+            <column name="ville" type="VARCHAR(100)"/>
+            <column name="ice" type="VARCHAR(50)">
+                <constraints unique="true"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP"/>
+            <column name="updated_at" type="TIMESTAMP"/>
+        </createTable>
+    </changeSet>
+
+</databaseChangeLog>
