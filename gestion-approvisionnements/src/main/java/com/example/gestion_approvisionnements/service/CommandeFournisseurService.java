@@ -7,12 +7,13 @@ import com.example.gestion_approvisionnements.entity.Fournisseur;
 import com.example.gestion_approvisionnements.entity.LigneCommande;
 import com.example.gestion_approvisionnements.entity.Produit;
 import com.example.gestion_approvisionnements.enums.StatutCommande;
+import com.example.gestion_approvisionnements.exception.BusinessException;
+import com.example.gestion_approvisionnements.exception.ResourceNotFoundException;
 import com.example.gestion_approvisionnements.mapper.CommandeFournisseurMapper;
 import com.example.gestion_approvisionnements.mapper.LigneCommandeMapper;
 import com.example.gestion_approvisionnements.repository.CommandeFournisseurRepository;
 import com.example.gestion_approvisionnements.repository.FournisseurRepository;
 import com.example.gestion_approvisionnements.repository.ProduitRepository;
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -44,13 +45,13 @@ public class CommandeFournisseurService {
     @Transactional(readOnly = true)
     public CommandeFournisseurDTO getCommandeById(Long id) {
         CommandeFournisseur commande = commandeFournisseurRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Commande fournisseur introuvable avec l'id " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Commande fournisseur introuvable avec l'id " + id));
         return commandeFournisseurMapper.toDTO(commande);
     }
 
     public CommandeFournisseurDTO createCommande(CommandeFournisseurDTO commandeDTO) {
         Fournisseur fournisseur = fournisseurRepository.findById(commandeDTO.getFournisseurId())
-                .orElseThrow(() -> new EntityNotFoundException("Fournisseur introuvable avec l'id " + commandeDTO.getFournisseurId()));
+                .orElseThrow(() -> new ResourceNotFoundException("Fournisseur introuvable avec l'id " + commandeDTO.getFournisseurId()));
 
         CommandeFournisseur commande = commandeFournisseurMapper.toEntity(commandeDTO);
         commande.setFournisseur(fournisseur);
@@ -66,7 +67,7 @@ public class CommandeFournisseurService {
 
     public CommandeFournisseurDTO updateStatut(Long commandeId, StatutCommande nouveauStatut) {
         CommandeFournisseur commande = commandeFournisseurRepository.findById(commandeId)
-                .orElseThrow(() -> new EntityNotFoundException("Commande fournisseur introuvable avec l'id " + commandeId));
+                .orElseThrow(() -> new ResourceNotFoundException("Commande fournisseur introuvable avec l'id " + commandeId));
 
         commande.setStatut(nouveauStatut);
         CommandeFournisseur updated = commandeFournisseurRepository.save(commande);
@@ -75,7 +76,7 @@ public class CommandeFournisseurService {
 
     public void deleteCommande(Long id) {
         if (!commandeFournisseurRepository.existsById(id)) {
-            throw new EntityNotFoundException("Commande fournisseur introuvable avec l'id " + id);
+            throw new ResourceNotFoundException("Commande fournisseur introuvable avec l'id " + id);
         }
         commandeFournisseurRepository.deleteById(id);
     }
@@ -103,13 +104,13 @@ public class CommandeFournisseurService {
 
     private List<LigneCommande> buildLignesCommande(List<LigneCommandeDTO> lignesDTO, CommandeFournisseur commande) {
         if (lignesDTO == null || lignesDTO.isEmpty()) {
-            throw new IllegalArgumentException("La commande doit contenir au moins une ligne");
+            throw new BusinessException("La commande doit contenir au moins une ligne");
         }
 
         List<LigneCommande> lignes = new ArrayList<>();
         for (LigneCommandeDTO ligneDTO : lignesDTO) {
             Produit produit = produitRepository.findById(ligneDTO.getProduitId())
-                    .orElseThrow(() -> new EntityNotFoundException("Produit introuvable avec l'id " + ligneDTO.getProduitId()));
+                    .orElseThrow(() -> new ResourceNotFoundException("Produit introuvable avec l'id " + ligneDTO.getProduitId()));
 
             LigneCommande ligne = ligneCommandeMapper.toEntity(ligneDTO);
             ligne.setCommandeFournisseur(commande);
