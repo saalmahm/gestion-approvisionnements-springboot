@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="
+          http://www.liquibase.org/xml/ns/dbchangelog
+          http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="003-create-commande-fournisseur" author="youco">
+        <createTable tableName="commande_fournisseur">
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="date_commande" type="DATE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="statut" type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="montant_total" type="NUMERIC(12,2)"/>
+            <column name="fournisseur_id" type="BIGINT">
+                <constraints nullable="false" foreignKeyName="fk_commande_fournisseur__fournisseur"
+                             references="fournisseur(id)"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP"/>
+            <column name="updated_at" type="TIMESTAMP"/>
+        </createTable>
+    </changeSet>
+
+</databaseChangeLog>
