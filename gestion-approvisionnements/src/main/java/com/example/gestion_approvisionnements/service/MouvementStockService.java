@@ -5,11 +5,12 @@ import com.example.gestion_approvisionnements.entity.CommandeFournisseur;
 import com.example.gestion_approvisionnements.entity.MouvementStock;
 import com.example.gestion_approvisionnements.entity.Produit;
 import com.example.gestion_approvisionnements.enums.TypeMouvement;
+import com.example.gestion_approvisionnements.exception.BusinessException;
+import com.example.gestion_approvisionnements.exception.ResourceNotFoundException;
 import com.example.gestion_approvisionnements.mapper.MouvementStockMapper;
 import com.example.gestion_approvisionnements.repository.CommandeFournisseurRepository;
 import com.example.gestion_approvisionnements.repository.MouvementStockRepository;
 import com.example.gestion_approvisionnements.repository.ProduitRepository;
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -44,29 +45,28 @@ public class MouvementStockService {
 
     public MouvementStockDTO enregistrerMouvement(MouvementStockDTO mouvementDTO) {
         Produit produit = produitRepository.findById(mouvementDTO.getProduitId())
-                .orElseThrow(() -> new EntityNotFoundException("Produit introuvable avec l'id " + mouvementDTO.getProduitId()));
+                .orElseThrow(() -> new ResourceNotFoundException("Produit introuvable avec l'id " + mouvementDTO.getProduitId()));
 
         CommandeFournisseur commande = null;
         if (mouvementDTO.getCommandeFournisseurId() != null) {
             commande = commandeFournisseurRepository.findById(mouvementDTO.getCommandeFournisseurId())
-                    .orElseThrow(() -> new EntityNotFoundException("Commande fournisseur introuvable avec l'id " + mouvementDTO.getCommandeFournisseurId()));
+                    .orElseThrow(() -> new ResourceNotFoundException("Commande fournisseur introuvable avec l'id " + mouvementDTO.getCommandeFournisseurId()));
         }
 
         MouvementStock mouvement = mouvementStockMapper.toEntity(mouvementDTO);
         mouvement.setProduit(produit);
         mouvement.setCommandeFournisseur(commande);
-        mouvement.setDateMouvement(mouvementDTO.getDateMouvement() != null
-                ? mouvementDTO.getDateMouvement()
-                : LocalDateTime.now());
+        mouvement.setDateMouvement(
+                mouvementDTO.getDateMouvement() != null ? mouvementDTO.getDateMouvement() : LocalDateTime.now()
+        );
 
         int nouveauStock = calculerNouveauStock(produit.getStockActuel(), mouvement.getTypeMouvement(), mouvement.getQuantite());
         if (nouveauStock < 0) {
-            throw new IllegalStateException("Le stock ne peut pas devenir négatif");
+            throw new BusinessException("Le stock ne peut pas devenir négatif");
         }
 
         produit.setStockActuel(nouveauStock);
 
-        // Mettre à jour le CUMP en cas d’entrée (placeholder pour logique FIFO/CUMP)
         if (TypeMouvement.ENTREE.equals(mouvement.getTypeMouvement())) {
             BigDecimal prixUnitaire = mouvement.getPrixUnitaire() != null
                     ? mouvement.getPrixUnitaire()
