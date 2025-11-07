@@ -41,7 +41,7 @@ public class Produit {
     @Column(name = "cout_moyen_pondere", precision = 10, scale = 2)
     private BigDecimal coutMoyenPondere = BigDecimal.ZERO;
 
-    @ManyToMany(mappedBy = "produits")
+    @OneToMany(mappedBy = "produit", cascade = CascadeType.ALL)
     private List<LigneCommande> lignesCommande = new ArrayList<>();
 
     @OneToMany(mappedBy = "produit", cascade = CascadeType.ALL)
