@@ -1,0 +1,326 @@
+{
+	"info": {
+		"_postman_id": "e02b2fdc-bd02-434b-a49f-354138fefb63",
+		"name": "gestion-approvisionnements",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "31646156",
+		"_collection_link": "https://planetary-meteor-930423.postman.co/workspace/My-Workspace~3c629cee-c69b-47d1-8100-7745140dc96a/collection/31646156-e02b2fdc-bd02-434b-a49f-354138fefb63?action=share&source=collection_link&creator=31646156"
+	},
+	"item": [
+		{
+			"name": "create-produit",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"id\": 2,\r\n  \"nom\": \"Cahier A4 96 pages\",\r\n  \"description\": \"Cahier grand format 96 pages à petits carreaux\",\r\n  \"prixUnitaire\": 12.50,   \r\n  \"categorie\": \"Papeterie\",\r\n  \"stockActuel\": 0,          \r\n  \"coutMoyenPondere\": 0      \r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/produits",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"produits"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "produit-by-Id",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/produits/3",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"produits",
+						"3"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "update-produit",
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"nom\": \"Stylo bille bleu\",\r\n  \"description\": \"Stylo bille 1mm – lot de 50\",\r\n  \"prixUnitaire\": 4.40,\r\n  \"categorie\": \"Papeterie\",\r\n  \"stockActuel\": 200,\r\n  \"coutMoyenPondere\": 4.20\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/produits/1",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"produits",
+						"1"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "all-produits",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/produits",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"produits"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "delete-produit",
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/produits/1",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"produits",
+						"1"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "ajuste-stock",
+			"request": {
+				"method": "PATCH",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/produits/1/stock?variation=-10",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"produits",
+						"1",
+						"stock"
+					],
+					"query": [
+						{
+							"key": "variation",
+							"value": "-10"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "create-fournisseur",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"societe\": \"BureauPlus\",\r\n  \"adresse\": \"12 rue des Primevères\",\r\n  \"contact\": \"Mme Dupont\",\r\n  \"email\": \"contact@bureauplus.ma\",\r\n  \"telephone\": \"+212612345678\",\r\n  \"ville\": \"Casablanca\",\r\n  \"ice\": \"ICE123456789\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/fournisseurs",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"fournisseurs"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "update-fournisseur",
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"societe\": \"BureauPlus SARL\",\r\n  \"adresse\": \"12 rue des Primevères\",\r\n  \"contact\": \"Mme Dupont\",\r\n  \"email\": \"service@bureauplus.ma\",\r\n  \"telephone\": \"+212612345678\",\r\n  \"ville\": \"Casablanca\",\r\n  \"ice\": \"ICE123456789\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/fournisseurs/1",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"fournisseurs",
+						"1"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "fournisseur-by-id",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/fournisseurs/4",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"fournisseurs",
+						"4"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "delete-fournisseur",
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/fournisseurs/3",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"fournisseurs",
+						"3"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "create-commande",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"reference\": \"CMD-2025-001\",\r\n  \"dateCommande\": \"2025-11-07\",\r\n  \"dateLivraisonPrevue\": \"2025-11-21\",\r\n  \"statut\": \"EN_ATTENTE\",\r\n  \"fournisseurId\": 1,\r\n  \"lignesCommande\": [\r\n    { \"produitId\": 1, \"quantite\": 100, \"prixUnitaire\": 4.50 },\r\n    { \"produitId\": 2, \"quantite\": 50, \"prixUnitaire\": 2.75 }\r\n  ]\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/commandes",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"commandes"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "all-commandes",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/commandes",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"commandes"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "commande-by-id",
+			"request": {
+				"method": "GET",
+				"header": []
+			},
+			"response": []
+		},
+		{
+			"name": "edit-statut-commande",
+			"request": {
+				"method": "GET",
+				"header": []
+			},
+			"response": []
+		}
+	]
+}
