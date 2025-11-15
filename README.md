@@ -115,7 +115,6 @@ L'API est accessible sur : **http://localhost:8080**
 | GET     | `/{id}`      | Détail fournisseur       |
 | GET     | `/ice/{ice}` | Recherche par ICE        |
 | POST    | `/`          | Créer                    |
-| PUT     | `/{id}`      | Modifier                 |
 | DELETE  | `/{id}`      | Supprimer                |
 
 **Exemple création :**
@@ -138,11 +137,10 @@ L'API est accessible sur : **http://localhost:8080**
 | GET     | `/`                               | Liste paginée                  |
 | GET     | `/{id}`                           | Détail produit                 |
 | GET     | `/categorie/{categorie}`          | Filtrer par catégorie          |
-| GET     | `/stock-faible?seuil=10`          | Produits avec stock ≤ seuil    |
 | POST    | `/`                               | Créer                          |
 | PUT     | `/{id}`                           | Modifier                       |
 | PATCH   | `/{id}/stock?variation=5`         | Ajuster stock (+/-)            |
-| PATCH   | `/{id}/cump?valeur=12.5`          | Mettre à jour le CUMP          |
+| PATCH   | `/{id}/stock?variation=X&prixUnitaire=Y` | Ajuster stock avec prix (nouvel arrivage) |
 | DELETE  | `/{id}`                           | Supprimer                      |
 
 ### 🛒 Commandes fournisseurs `/api/commandes`
@@ -156,7 +154,6 @@ L'API est accessible sur : **http://localhost:8080**
 | DELETE  | `/{id}`                                               | Supprimer                  |
 | GET     | `/statut/{statut}`                                    | Filtrer par statut         |
 | GET     | `/fournisseur/{fournisseurId}`                        | Filtrer par fournisseur    |
-| GET     | `/periode?debut=2024-01-01&fin=2024-12-31`            | Filtrer par période        |
 
 **Statuts disponibles :** `EN_ATTENTE`, `VALIDEE`, `LIVREE`, `ANNULEE`.
 
@@ -172,15 +169,80 @@ L'API est accessible sur : **http://localhost:8080**
 
 ---
 
-## 🧮 CUMP (Coût Unitaire Moyen Pondéré)
+## 🧮 Gestion des stocks et CUMP
 
-Lors d'un mouvement d'entrée, le CUMP est recalculé automatiquement :
+### Ajustement de stock
+
+L'API permet deux types d'ajustements de stock via l'endpoint PATCH :
+
+#### Ajustement simple (correction d'inventaire)
+```http
+PATCH /api/produits/{id}/stock?variation=X
+```
+
+Ajuste le stock en ajoutant X unités (négatif pour retirer).
+
+**Exemples :**
+```bash
+# Ajouter 10 unités
+curl -X PATCH "http://localhost:8080/api/produits/1/stock?variation=10"
+
+# Retirer 5 unités
+curl -X PATCH "http://localhost:8080/api/produits/1/stock?variation=-5"
+```
+
+**Comportement :**
+- **Type de mouvement généré** : `AJUSTEMENT`
+- **Impact sur le CUMP** : Aucun (conserve le CUMP actuel)
+- **Cas d'usage** : Corrections d'inventaire, ajustements manuels
+
+#### Ajustement avec prix unitaire (nouvel arrivage)
+```http
+PATCH /api/produits/{id}/stock?variation=X&prixUnitaire=Y
+```
+
+Ajoute X unités au stock et met à jour le prix d'achat unitaire.
+
+**Exemple :**
+```bash
+# Recevoir 50 unités à 12.5 DH l'unité
+curl -X PATCH "http://localhost:8080/api/produits/1/stock?variation=50&prixUnitaire=12.5"
+```
+
+**Comportement :**
+- **Type de mouvement généré** : `ENTREE`
+- **Impact sur le CUMP** : Recalcul automatique selon la formule pondérée
+- **Cas d'usage** : Réception de nouvelles commandes fournisseurs
+
+### CUMP (Coût Unitaire Moyen Pondéré)
+
+Le CUMP est automatiquement recalculé lors des **entrées de stock** (mouvements de type `ENTREE`) selon la formule suivante :
 
 ```
-Nouveau CUMP = (Ancien stock × Ancien CUMP + Quantité entrée × Prix d'achat) / (Ancien stock + Quantité entrée)
+Nouveau CUMP = (Stock existant × CUMP actuel + Quantité entrée × Prix d'achat) / (Stock existant + Quantité entrée)
 ```
 
-L'objectif est de fournir une valorisation fiable du stock.
+**Exemple de calcul :**
+- Stock actuel : 100 unités à 10 DH (CUMP = 10 DH)
+- Nouvelle entrée : 50 unités à 15 DH
+- **Calcul** : (100 × 10 + 50 × 15) / (100 + 50) = (1000 + 750) / 150 = **11,67 DH**
+
+> ⚠️ **Important** : Les ajustements simples (sans prix unitaire) ne modifient pas le CUMP afin de préserver la valorisation du stock existant.
+
+### Types de mouvements
+
+| Type | Description | Impact sur le stock | Impact sur le CUMP |
+|------|-------------|--------------------|--------------------|
+| `ENTREE` | Nouveaux arrivages fournisseurs | ➕ Augmentation | ✅ Recalculé automatiquement |
+| `SORTIE` | Sorties de stock (ventes, consommation) | ➖ Diminution | ❌ Aucun changement |
+| `AJUSTEMENT` | Corrections d'inventaire | ➕➖ Variable | ❌ Aucun changement |
+
+**Cas d'usage par type :**
+- **ENTREE** : Réception de commande fournisseur, approvisionnement
+- **SORTIE** : Ventes, consommation interne, pertes
+- **AJUSTEMENT** : Correction suite à inventaire physique, régularisation
+
+L'objectif est de fournir une valorisation fiable et conforme aux normes comptables pour la gestion du stock.
 
 ---
 
@@ -288,4 +350,4 @@ Les services et contrôleurs critiques bénéficient d'un bon niveau de couvertu
 
 ## 👤 Auteur
 
-**Développé par :** Salma Hamdi  
+**Développé par :** Salma Hamdi
