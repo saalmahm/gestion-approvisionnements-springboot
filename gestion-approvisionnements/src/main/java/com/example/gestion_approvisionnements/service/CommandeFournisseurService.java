@@ -121,7 +121,7 @@ public class CommandeFournisseurService {
                     : produit.getPrixUnitaire();
             ligne.setPrixUnitaire(prixUnitaire);
 
-            ligne.calculerSousTotal();
+            ligne.calculerSousTotal();  
             lignes.add(ligne);
         }
         return lignes;
