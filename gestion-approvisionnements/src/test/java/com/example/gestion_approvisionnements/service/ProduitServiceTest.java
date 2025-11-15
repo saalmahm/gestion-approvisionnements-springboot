@@ -32,6 +32,8 @@ class ProduitServiceTest {
     private ProduitRepository produitRepository;
     @Mock
     private ProduitMapper produitMapper;
+    @Mock
+    private MouvementStockService mouvementStockService;
 
     @InjectMocks
     private ProduitService produitService;
@@ -286,7 +288,7 @@ class ProduitServiceTest {
         when(produitRepository.findById(4L)).thenReturn(Optional.of(produit));
 
         // Act
-        produitService.ajusterStock(4L, 5);
+       produitService.ajusterStock(4L, 5, null);
 
         // Assert
         assertThat(produit.getStockActuel()).isEqualTo(15);
@@ -302,7 +304,7 @@ class ProduitServiceTest {
         when(produitRepository.findById(8L)).thenReturn(Optional.empty());
 
         // Act & Assert
-        assertThatThrownBy(() -> produitService.ajusterStock(8L, 3))
+       assertThatThrownBy(() -> produitService.ajusterStock(8L, 3, null))
                 .isInstanceOf(ResourceNotFoundException.class);
         verify(produitRepository).findById(8L);
         verifyNoMoreInteractions(produitRepository);
@@ -315,9 +317,9 @@ class ProduitServiceTest {
         when(produitRepository.findById(9L)).thenReturn(Optional.of(produit));
 
         // Act & Assert
-        assertThatThrownBy(() -> produitService.ajusterStock(9L, -5))
+   assertThatThrownBy(() -> produitService.ajusterStock(9L, -5, null))
                 .isInstanceOf(BusinessException.class)
-                .hasMessageContaining("variation");
+                .hasMessage("Le stock ne peut pas devenir négatif");
         verify(produitRepository).findById(9L);
         verifyNoMoreInteractions(produitRepository);
     }

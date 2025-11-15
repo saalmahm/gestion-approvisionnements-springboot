@@ -191,8 +191,8 @@ class MouvementStockServiceTest {
 
         // Act & Assert
         assertThatThrownBy(() -> mouvementStockService.enregistrerMouvement(dto))
-                .isInstanceOf(BusinessException.class)
-                .hasMessageContaining("ne peut pas devenir négatif");
+        .isInstanceOf(BusinessException.class)
+        .hasMessage("Stock insuffisant pour effectuer cette sortie");
         verify(produitRepository).findById(1L);
         verify(mouvementStockMapper).toEntity(dto);
         verifyNoMoreInteractions(produitRepository, mouvementStockMapper);
