@@ -58,9 +58,12 @@ public class ProduitController {
     }
 
     @PatchMapping("/{id}/stock")
-    public void ajusterStock(@PathVariable Long id,
-                             @RequestParam int variation) {
-        produitService.ajusterStock(id, variation);
+    public void ajusterStock(
+        @PathVariable Long id,
+        @RequestParam int variation,
+        @RequestParam(required = false) BigDecimal prixUnitaire
+    ) {
+        produitService.ajusterStock(id, variation, prixUnitaire);
     }
 
     @PatchMapping("/{id}/cump")

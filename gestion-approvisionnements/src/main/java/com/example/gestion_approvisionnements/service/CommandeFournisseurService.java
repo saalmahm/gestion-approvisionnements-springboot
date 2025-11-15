@@ -19,6 +19,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.example.gestion_approvisionnements.dto.MouvementStockDTO;
+import com.example.gestion_approvisionnements.enums.TypeMouvement;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -35,6 +37,7 @@ public class CommandeFournisseurService {
     private final ProduitRepository produitRepository;
     private final CommandeFournisseurMapper commandeFournisseurMapper;
     private final LigneCommandeMapper ligneCommandeMapper;
+    private final MouvementStockService mouvementStockService;
 
     @Transactional(readOnly = true)
     public Page<CommandeFournisseurDTO> getAllCommandes(Pageable pageable) {
@@ -69,8 +72,30 @@ public class CommandeFournisseurService {
         CommandeFournisseur commande = commandeFournisseurRepository.findById(commandeId)
                 .orElseThrow(() -> new ResourceNotFoundException("Commande fournisseur introuvable avec l'id " + commandeId));
 
+        // ancien statut
+        StatutCommande ancienStatut = commande.getStatut();
         commande.setStatut(nouveauStatut);
         CommandeFournisseur updated = commandeFournisseurRepository.save(commande);
+
+        // Si la commande vient de passer à LIVREE: les mouvements de SORTIE
+        if (!StatutCommande.LIVREE.equals(ancienStatut) && StatutCommande.LIVREE.equals(nouveauStatut)) {
+            if (commande.getLignesCommande() != null) {
+                commande.getLignesCommande().forEach(ligne -> {
+                    MouvementStockDTO mouvement = new MouvementStockDTO();
+                    mouvement.setProduitId(ligne.getProduit().getId());
+                    mouvement.setCommandeFournisseurId(commande.getId());
+                    //  SORTIE car on vend au fournisseur
+                    mouvement.setTypeMouvement(TypeMouvement.SORTIE);
+                    mouvement.setQuantite(ligne.getQuantite());
+
+                    mouvement.setPrixUnitaire(ligne.getPrixUnitaire());
+                    // mouvement.setReference("CMD-VENTE-" + commande.getId());
+
+                    mouvementStockService.enregistrerMouvement(mouvement);
+                });
+            }
+        }
+
         return commandeFournisseurMapper.toDTO(updated);
     }
 

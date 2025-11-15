@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.math.RoundingMode;
 
 @Service
 @RequiredArgsConstructor
@@ -44,15 +45,18 @@ public class MouvementStockService {
     }
 
     public MouvementStockDTO enregistrerMouvement(MouvementStockDTO mouvementDTO) {
+        // Vérification du produit
         Produit produit = produitRepository.findById(mouvementDTO.getProduitId())
                 .orElseThrow(() -> new ResourceNotFoundException("Produit introuvable avec l'id " + mouvementDTO.getProduitId()));
 
+        // Vérification de la commande fournisseur si fournie
         CommandeFournisseur commande = null;
         if (mouvementDTO.getCommandeFournisseurId() != null) {
             commande = commandeFournisseurRepository.findById(mouvementDTO.getCommandeFournisseurId())
                     .orElseThrow(() -> new ResourceNotFoundException("Commande fournisseur introuvable avec l'id " + mouvementDTO.getCommandeFournisseurId()));
         }
 
+        // Création de l'entité à partir du DTO
         MouvementStock mouvement = mouvementStockMapper.toEntity(mouvementDTO);
         mouvement.setProduit(produit);
         mouvement.setCommandeFournisseur(commande);
@@ -60,22 +64,39 @@ public class MouvementStockService {
                 mouvementDTO.getDateMouvement() != null ? mouvementDTO.getDateMouvement() : LocalDateTime.now()
         );
 
-        int nouveauStock = calculerNouveauStock(produit.getStockActuel(), mouvement.getTypeMouvement(), mouvement.getQuantite());
-        if (nouveauStock < 0) {
-            throw new BusinessException("Le stock ne peut pas devenir négatif");
+        // Gestion du type de mouvement
+        TypeMouvement type = mouvement.getTypeMouvement();
+        int quantite = mouvement.getQuantite();
+
+        switch (type) {
+            case ENTREE:
+                BigDecimal prixUnitaire = mouvement.getPrixUnitaire() != null
+                        ? mouvement.getPrixUnitaire()
+                        : produit.getPrixUnitaire();
+                recalculerCump(produit, quantite, prixUnitaire);
+                break;
+
+            case SORTIE:
+                int stockApresSortie = produit.getStockActuel() - quantite;
+                if (stockApresSortie < 0) {
+                    throw new BusinessException("Stock insuffisant pour effectuer cette sortie");
+                }
+                produit.setStockActuel(stockApresSortie);
+                break;
+
+            case AJUSTEMENT:
+                // Pour un ajustement, on définit directement la nouvelle valeur du stock
+                if (quantite < 0) {
+                    throw new BusinessException("La quantité d'ajustement ne peut pas être négative");
+                }
+                produit.setStockActuel(quantite);
+                break;
         }
 
-        produit.setStockActuel(nouveauStock);
+        // Mise à jour du stock après mouvement
+        mouvement.setStockApresMouvement(produit.getStockActuel());
 
-        if (TypeMouvement.ENTREE.equals(mouvement.getTypeMouvement())) {
-            BigDecimal prixUnitaire = mouvement.getPrixUnitaire() != null
-                    ? mouvement.getPrixUnitaire()
-                    : produit.getPrixUnitaire();
-            mettreAJourCoutMoyen(produit, mouvement.getQuantite(), prixUnitaire);
-        }
-
-        mouvement.setStockApresMouvement(nouveauStock);
-
+        // Sauvegarde des modifications
         produitRepository.save(produit);
         MouvementStock saved = mouvementStockRepository.save(mouvement);
 
@@ -86,7 +107,7 @@ public class MouvementStockService {
         return switch (type) {
             case ENTREE -> stockActuel + quantite;
             case SORTIE -> stockActuel - quantite;
-            case AJUSTEMENT -> quantite;
+            default -> throw new IllegalStateException("Type de mouvement non géré: " + type);
         };
     }
 
@@ -113,5 +134,30 @@ public class MouvementStockService {
                 : prixEntree;
 
         produit.setCoutMoyenPondere(nouveauCump);
+    }
+
+    private void recalculerCump(Produit produit, int quantiteEntree, BigDecimal prixUnitaire) {
+        int ancienStock = produit.getStockActuel();
+        BigDecimal ancienCump = produit.getCoutMoyenPondere();
+        if (ancienCump == null) {
+            ancienCump = BigDecimal.ZERO;
+        }
+
+        BigDecimal valeurAncienStock = ancienCump.multiply(BigDecimal.valueOf(ancienStock));
+        BigDecimal valeurNouvelleEntree = prixUnitaire.multiply(BigDecimal.valueOf(quantiteEntree));
+        int nouveauStock = ancienStock + quantiteEntree;
+
+        if (nouveauStock <= 0) {
+            produit.setCoutMoyenPondere(BigDecimal.ZERO);
+            produit.setStockActuel(0);
+            return;
+        }
+
+        BigDecimal nouveauCump = valeurAncienStock
+                .add(valeurNouvelleEntree)
+                .divide(BigDecimal.valueOf(nouveauStock), 2, RoundingMode.HALF_UP);
+
+        produit.setCoutMoyenPondere(nouveauCump);
+        produit.setStockActuel(nouveauStock);
     }
 }

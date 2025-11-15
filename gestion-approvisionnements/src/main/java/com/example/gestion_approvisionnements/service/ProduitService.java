@@ -11,6 +11,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.example.gestion_approvisionnements.dto.MouvementStockDTO;
+import com.example.gestion_approvisionnements.enums.TypeMouvement;
+import com.example.gestion_approvisionnements.service.MouvementStockService;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -22,6 +25,7 @@ public class ProduitService {
 
     private final ProduitRepository produitRepository;
     private final ProduitMapper produitMapper;
+    private final MouvementStockService mouvementStockService;
 
     @Transactional(readOnly = true)
     public Page<ProduitDTO> getAllProduits(Pageable pageable) {
@@ -37,11 +41,17 @@ public class ProduitService {
     }
 
     public ProduitDTO createProduit(ProduitDTO produitDTO) {
-        validateProduit(produitDTO);
-        Produit produit = produitMapper.toEntity(produitDTO);
-        Produit saved = produitRepository.save(produit);
-        return produitMapper.toDTO(saved);
+    validateProduit(produitDTO);
+
+    Produit produit = produitMapper.toEntity(produitDTO);
+
+    if (produit.getCoutMoyenPondere() == null && produit.getPrixUnitaire() != null) {
+        produit.setCoutMoyenPondere(produit.getPrixUnitaire());
     }
+
+    Produit saved = produitRepository.save(produit);
+    return produitMapper.toDTO(saved);
+}
 
     public ProduitDTO updateProduit(Long id, ProduitDTO produitDTO) {
         Produit existing = produitRepository.findById(id)
@@ -71,17 +81,39 @@ public class ProduitService {
         return produitMapper.toDTOList(produitRepository.findByStockActuelLessThanEqual(seuil));
     }
 
-    public void ajusterStock(Long produitId, int variation) {
+    public void ajusterStock(Long produitId, int variation, BigDecimal nouveauPrixUnitaire) {
         Produit produit = produitRepository.findById(produitId)
                 .orElseThrow(() -> new ResourceNotFoundException("Produit introuvable avec l'id " + produitId));
 
-        int nouveauStock = produit.getStockActuel() + variation;
-        if (nouveauStock < 0) {
-            throw new BusinessException("Le stock ne peut pas devenir négatif (variation: " + variation + ")");
+        int nouveauStock = produit.getStockActuel();
+        
+        // Création du mouvement
+        MouvementStockDTO mouvement = new MouvementStockDTO();
+        mouvement.setProduitId(produitId);
+        
+        if (nouveauPrixUnitaire != null && nouveauPrixUnitaire.compareTo(BigDecimal.ZERO) > 0) {
+            // Cas 1: Nouvel arrivage avec nouveau prix
+            mouvement.setTypeMouvement(TypeMouvement.ENTREE);
+            mouvement.setQuantite(variation);
+            mouvement.setPrixUnitaire(nouveauPrixUnitaire);
+            produit.setPrixUnitaire(nouveauPrixUnitaire);
+        } else {
+            // Cas 2: Ajustement simple de stock
+            mouvement.setTypeMouvement(TypeMouvement.AJUSTEMENT);
+            nouveauStock += variation;  // On ajoute la variation ici
+            if (nouveauStock < 0) {
+                throw new BusinessException("Le stock ne peut pas devenir négatif");
+            }
+            mouvement.setQuantite(nouveauStock);
+            mouvement.setPrixUnitaire(produit.getPrixUnitaire());
         }
 
+        // Mise à jour du stock
         produit.setStockActuel(nouveauStock);
         produitRepository.save(produit);
+
+        // Enregistrement du mouvement
+        mouvementStockService.enregistrerMouvement(mouvement);
     }
 
     public void mettreAJourCoutMoyen(Long produitId, BigDecimal nouveauCump) {
